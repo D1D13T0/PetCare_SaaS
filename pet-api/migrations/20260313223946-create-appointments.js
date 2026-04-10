@@ -48,6 +48,9 @@ module.exports = {
 				),
 				defaultValue: "SCHEDULED",
 			},
+			diagnosis: {
+				type: Sequelize.TEXT,
+			},
 			notes: {
 				type: Sequelize.TEXT,
 			},

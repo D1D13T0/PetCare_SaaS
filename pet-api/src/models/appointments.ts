@@ -8,6 +8,7 @@ interface AppointmentAttributes {
 	veterinarian_id: string;
 	date: Date;
 	status: "SCHEDULED" | "CONFIRMED" | "CANCELLED" | "COMPLETED";
+	diagnosis?: string;
 	notes?: string;
 	createdAt?: Date;
 	updatedAt?: Date;
@@ -26,6 +27,7 @@ class Appointment
 	public veterinarian_id!: string;
 	public date!: Date;
 	public status!: "SCHEDULED" | "CONFIRMED" | "CANCELLED" | "COMPLETED";
+	public diagnosis?: string;
 	public notes?: string;
 
 	public readonly createdAt!: Date;
@@ -58,6 +60,9 @@ Appointment.init(
 		status: {
 			type: DataTypes.ENUM("SCHEDULED", "CONFIRMED", "CANCELLED", "COMPLETED"),
 			defaultValue: "SCHEDULED",
+		},
+		diagnosis: {
+			type: DataTypes.TEXT,
 		},
 		notes: {
 			type: DataTypes.TEXT,

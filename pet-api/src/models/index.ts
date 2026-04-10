@@ -1,5 +1,6 @@
 import Appointment from "./appointments";
 import Clinic from "./clinic";
+import Owner from "./owner";
 import Pet from "./pet";
 import User from "./user";
 
@@ -28,4 +29,7 @@ Appointment.belongsTo(Pet, { foreignKey: "pet_id" });
 User.hasMany(Appointment, { foreignKey: "veterinarian_id" });
 Appointment.belongsTo(User, { foreignKey: "veterinarian_id" });
 
-export { User, Pet, Clinic };
+Clinic.hasMany(Owner, { foreignKey: "clinic_id" });
+Owner.belongsTo(Clinic, { foreignKey: "clinic_id" });
+
+export { User, Pet, Clinic, Owner };

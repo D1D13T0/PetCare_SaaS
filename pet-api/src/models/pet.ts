@@ -7,7 +7,7 @@ interface PetAttributes {
 	species: string;
 	breed?: string;
 	birth_date?: Date;
-	user_id: string;
+	owner_id: string;
 	clinic_id: string;
 	createdAt?: Date;
 	updatedAt?: Date;
@@ -24,7 +24,7 @@ class Pet
 	public species!: string;
 	public breed?: string;
 	public birth_date?: Date;
-	public user_id!: string;
+	public owner_id!: string;
 	public clinic_id!: string;
 
 	public readonly createdAt!: Date;
@@ -52,7 +52,7 @@ Pet.init(
 		birth_date: {
 			type: DataTypes.DATE,
 		},
-		user_id: {
+		owner_id: {
 			type: DataTypes.UUID,
 			allowNull: false,
 		},
