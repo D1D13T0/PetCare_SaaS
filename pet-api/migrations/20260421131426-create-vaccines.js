@@ -2,34 +2,11 @@
 
 module.exports = {
 	async up(queryInterface, Sequelize) {
-		await queryInterface.createTable("pets", {
+		await queryInterface.createTable("vaccines", {
 			id: {
 				type: Sequelize.UUID,
 				defaultValue: Sequelize.UUIDV4,
 				primaryKey: true,
-			},
-			name: {
-				type: Sequelize.STRING,
-				allowNull: false,
-			},
-			species: {
-				type: Sequelize.STRING,
-				allowNull: false,
-			},
-			breed: {
-				type: Sequelize.STRING,
-			},
-			birth_date: {
-				type: Sequelize.DATE,
-			},
-			owner_id: {
-				type: Sequelize.UUID,
-				allowNull: false,
-				references: {
-					model: "owners",
-					key: "id",
-				},
-				onDelete: "CASCADE",
 			},
 			clinic_id: {
 				type: Sequelize.UUID,
@@ -39,6 +16,29 @@ module.exports = {
 					key: "id",
 				},
 				onDelete: "CASCADE",
+			},
+			pet_id: {
+				type: Sequelize.UUID,
+				allowNull: false,
+				references: {
+					model: "pets",
+					key: "id",
+				},
+				onDelete: "CASCADE",
+			},
+			name: {
+				type: Sequelize.STRING,
+				allowNull: false,
+			},
+			application_date: {
+				type: Sequelize.DATE,
+				allowNull: false,
+			},
+			next_dose_date: {
+				type: Sequelize.DATE,
+			},
+			notes: {
+				type: Sequelize.TEXT,
 			},
 			createdAt: {
 				allowNull: false,
@@ -54,6 +54,6 @@ module.exports = {
 	},
 
 	async down(queryInterface) {
-		await queryInterface.dropTable("pets");
+		await queryInterface.dropTable("vaccines");
 	},
 };
