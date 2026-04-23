@@ -25,7 +25,12 @@ export const register = async (req: Request, res: Response) => {
 			role: "ADMIN",
 		});
 
-		return res.status(201).json(user);
+		return res.status(201).json({
+			id: user.id,
+			email: user.email,
+			role: user.role,
+			message: "Usuário criado com sucesso",
+		});
 	} catch (error) {
 		return res.status(500).json({
 			message: "Erro ao registrar usuário",
@@ -63,7 +68,15 @@ export const login = async (req: Request, res: Response) => {
 			{ expiresIn: "1d" },
 		);
 
-		return res.json({ token });
+		return res.json({
+			token,
+			user: {
+				id: user.id,
+				email: user.email,
+				role: user.role,
+				clinic_id: user.clinic_id,
+			},
+		});
 	} catch (error) {
 		return res.status(500).json({
 			message: "Erro ao fazer login",
