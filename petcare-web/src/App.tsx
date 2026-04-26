@@ -1,37 +1,42 @@
-import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
-import Login from "./pages/Login";
-import Register from "./pages/Register";
-import Home from "./pages/Home";
-import PrivateRoute from "./routes/PrivateRoute";
+import { Navigate, Route, Routes } from 'react-router-dom';
+import { Appointments } from './pages/Appointments';
+import Home from './pages/Home';
+import Login from './pages/Login';
+import { Owners } from './pages/Owners';
+import Pets from './pages/Pets';
+import Register from './pages/Register';
+import PrivateRoute from './routes/PrivateRoute';
 
 function App() {
-  return (
-    <BrowserRouter>
-      <Routes>
+	return (
+		<Routes>
+			{/* Redireciona / para /login */}
+			<Route path="/" element={<Navigate to="/login" />} />
 
-        {/* Redireciona raiz para login */}
-        <Route path="/" element={<Navigate to="/login" />} />
+			{/* Públicas */}
+			<Route path="/login" element={<Login />} />
+			<Route path="/register" element={<Register />} />
 
-        {/* Públicas */}
-        <Route path="/login" element={<Login />} />
-        <Route path="/register" element={<Register />} />
+			{/* Protegidas */}
+			<Route
+				path="/home"
+				element={
+					<PrivateRoute>
+						<Home />
+					</PrivateRoute>
+				}
+			/>
 
-        {/* Protegida */}
-        <Route
-          path="/home"
-          element={
-            <PrivateRoute>
-              <Home />
-            </PrivateRoute>
-          }
-        />
-
-        {/* Fallback para rotas inexistentes */}
-        <Route path="*" element={<Navigate to="/login" />} />
-
-      </Routes>
-    </BrowserRouter>
-  );
+			<Route
+				path="/pets"
+				element={
+					<PrivateRoute>
+						<Pets />
+					</PrivateRoute>
+				}
+			/>
+		</Routes>
+	);
 }
 
 export default App;
