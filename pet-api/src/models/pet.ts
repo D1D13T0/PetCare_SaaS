@@ -6,6 +6,8 @@ interface PetAttributes {
 	name: string;
 	species: string;
 	breed?: string;
+	sex?: 'M' | 'F';
+	weight?: number;
 	birth_date?: Date;
 	owner_id: string;
 	clinic_id: string;
@@ -23,6 +25,8 @@ class Pet
 	public name!: string;
 	public species!: string;
 	public breed?: string;
+	public sex?: 'M' | 'F';
+	public weight?: number;
 	public birth_date?: Date;
 	public owner_id!: string;
 	public clinic_id!: string;
@@ -48,6 +52,14 @@ Pet.init(
 		},
 		breed: {
 			type: DataTypes.STRING,
+		},
+		sex: {
+			type: DataTypes.ENUM('M', 'F'),
+			allowNull: true,
+		},
+		weight: {
+			type: DataTypes.FLOAT,
+			allowNull: true,
 		},
 		birth_date: {
 			type: DataTypes.DATE,

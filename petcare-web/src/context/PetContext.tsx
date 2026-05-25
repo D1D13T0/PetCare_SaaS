@@ -1,10 +1,4 @@
-import {
-	createContext,
-	ReactNode,
-	useContext,
-	useEffect,
-	useState,
-} from 'react';
+import { createContext, type ReactNode, useContext, useState } from 'react';
 import api from '../services/api';
 
 interface Pet {
@@ -12,6 +6,10 @@ interface Pet {
 	name: string;
 	species: string;
 	breed?: string;
+	sex?: 'M' | 'F';
+	weight?: number;
+	birth_date?: string;
+	owner_id?: string;
 }
 
 interface PetContextType {
@@ -19,15 +17,18 @@ interface PetContextType {
 	loading: boolean;
 	fetchPets: () => Promise<void>;
 	createPet: (data: Partial<Pet>) => Promise<void>;
+	updatePet: (id: string, data: Partial<Pet>) => Promise<void>;
+	deletePet: (id: string) => Promise<void>;
 }
 
 const PetContext = createContext<PetContextType | null>(null);
 
 export function PetProvider({ children }: { children: ReactNode }) {
 	const [pets, setPets] = useState<Pet[]>([]);
-	const [loading, setLoading] = useState(true);
+	const [loading, setLoading] = useState(false);
 
 	async function fetchPets() {
+		setLoading(true);
 		try {
 			const response = await api.get('/pets');
 			setPets(response.data);
@@ -38,15 +39,21 @@ export function PetProvider({ children }: { children: ReactNode }) {
 
 	async function createPet(data: Partial<Pet>) {
 		await api.post('/pets', data);
-		await fetchPets(); // atualiza automaticamente
+		await fetchPets();
 	}
 
-	useEffect(() => {
-		fetchPets();
-	}, []);
+	async function updatePet(id: string, data: Partial<Pet>) {
+		const response = await api.put(`/pets/${id}`, data);
+		setPets((prev) => prev.map((p) => (p.id === id ? response.data : p)));
+	}
+
+	async function deletePet(id: string) {
+		await api.delete(`/pets/${id}`);
+		setPets((prev) => prev.filter((p) => p.id !== id));
+	}
 
 	return (
-		<PetContext.Provider value={{ pets, loading, fetchPets, createPet }}>
+		<PetContext.Provider value={{ pets, loading, fetchPets, createPet, updatePet, deletePet }}>
 			{children}
 		</PetContext.Provider>
 	);

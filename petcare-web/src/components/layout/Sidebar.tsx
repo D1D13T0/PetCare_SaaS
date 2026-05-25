@@ -1,6 +1,10 @@
 import { NavLink } from "react-router-dom";
+import { useAuth } from "../../context/AuthContext";
 
 export default function Sidebar() {
+  const { user } = useAuth();
+  const isAdmin = user?.role === "ADMIN";
+
   return (
     <div className="w-64 bg-white border-r border-gray-200 min-h-screen p-6">
 
@@ -61,6 +65,34 @@ export default function Sidebar() {
         >
           Agendamentos
         </NavLink>
+
+        <NavLink
+          to="/vaccines"
+          className={({ isActive }) =>
+            `px-3 py-2 rounded-lg transition ${
+              isActive
+                ? "bg-emerald-100 text-emerald-700 font-medium"
+                : "text-gray-600 hover:bg-gray-100"
+            }`
+          }
+        >
+          Vacinas
+        </NavLink>
+
+        {isAdmin && (
+          <NavLink
+            to="/clinic"
+            className={({ isActive }) =>
+              `px-3 py-2 rounded-lg transition ${
+                isActive
+                  ? "bg-emerald-100 text-emerald-700 font-medium"
+                  : "text-gray-600 hover:bg-gray-100"
+              }`
+            }
+          >
+            Clínica
+          </NavLink>
+        )}
 
       </nav>
     </div>

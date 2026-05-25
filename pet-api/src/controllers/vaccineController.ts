@@ -72,6 +72,48 @@ export const listVaccinesByPet = async (req: Request, res: Response) => {
 	}
 };
 
+export const updateVaccine = async (req: Request, res: Response) => {
+	try {
+		const { id } = req.params;
+		const vaccine = await Vaccine.findByPk(id);
+
+		if (!vaccine) {
+			return res.status(404).json({ message: "Vacina não encontrada" });
+		}
+
+		if (vaccine.clinic_id !== req.user!.clinic_id) {
+			return res.status(403).json({ message: "Acesso negado" });
+		}
+
+		await vaccine.update(req.body);
+		return res.json(vaccine);
+	} catch (error) {
+		console.error(error);
+		return res.status(500).json({ message: "Erro ao atualizar vacina" });
+	}
+};
+
+export const deleteVaccine = async (req: Request, res: Response) => {
+	try {
+		const { id } = req.params;
+		const vaccine = await Vaccine.findByPk(id);
+
+		if (!vaccine) {
+			return res.status(404).json({ message: "Vacina não encontrada" });
+		}
+
+		if (vaccine.clinic_id !== req.user!.clinic_id) {
+			return res.status(403).json({ message: "Acesso negado" });
+		}
+
+		await vaccine.destroy();
+		return res.json({ message: "Vacina removida com sucesso" });
+	} catch (error) {
+		console.error(error);
+		return res.status(500).json({ message: "Erro ao excluir vacina" });
+	}
+};
+
 export const getUpcomingVaccines = async (req: Request, res: Response) => {
 	try {
 		if (!req.user?.clinic_id) {

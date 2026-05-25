@@ -1,4 +1,5 @@
 import { Request, Response } from "express";
+import { Op } from "sequelize";
 import { validate as isUUID } from "uuid";
 import Owner from "../models/owner";
 import Pet from "../models/pet";
@@ -11,7 +12,7 @@ export const createPet = async (req: Request, res: Response) => {
 			});
 		}
 
-		const { owner_id, name, species, breed, birth_date } = req.body;
+		const { owner_id, name, species, breed, sex, weight, birth_date } = req.body;
 
 		if (!owner_id || !name || !species) {
 			return res.status(400).json({
@@ -33,6 +34,8 @@ export const createPet = async (req: Request, res: Response) => {
 			name,
 			species,
 			breed,
+			sex,
+			weight,
 			birth_date,
 		});
 
@@ -53,9 +56,15 @@ export const listPets = async (req: Request, res: Response) => {
 			});
 		}
 
-		const pets = await Pet.findAll({
-			where: { clinic_id: req.user.clinic_id },
-		});
+		const { search } = req.query;
+
+		const where: any = { clinic_id: req.user.clinic_id };
+
+		if (search) {
+			where.name = { [Op.iLike]: `%${search}%` };
+		}
+
+		const pets = await Pet.findAll({ where });
 
 		return res.json(pets);
 	} catch (error) {

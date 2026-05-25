@@ -5,16 +5,22 @@ import { BrowserRouter } from 'react-router-dom';
 import { AuthProvider } from './context/AuthContext';
 import './index.css';
 import App from './App';
+import { AppointmentProvider } from './context/AppointmentContext';
+import { OwnerProvider } from './context/OwnerContext';
 import { PetProvider } from './context/PetContext';
 
 createRoot(document.getElementById('root')!).render(
 	<StrictMode>
 		<BrowserRouter>
 			<AuthProvider>
-				<PetProvider>
-					<App />
-					<Toaster position="top-right" />
-				</PetProvider>
+				<OwnerProvider>
+					<PetProvider>
+						<AppointmentProvider>
+							<App />
+							<Toaster position="top-right" />
+						</AppointmentProvider>
+					</PetProvider>
+				</OwnerProvider>
 			</AuthProvider>
 		</BrowserRouter>
 	</StrictMode>,

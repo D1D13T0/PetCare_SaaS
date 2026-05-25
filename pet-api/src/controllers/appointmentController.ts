@@ -12,12 +12,6 @@ export const createAppointment = async (req: Request, res: Response) => {
 			});
 		}
 
-		if (req.user!.role !== "ADMIN") {
-			return res.status(403).json({
-				message: "Apenas ADMIN pode criar agendamentos",
-			});
-		}
-
 		const { pet_id, veterinarian_id, date, diagnosis, notes } = req.body;
 
 		if (!pet_id || !veterinarian_id || !date) {
@@ -108,12 +102,6 @@ export const completeAppointment = async (req: Request, res: Response) => {
 			return res.status(403).json({ message: "Acesso negado" });
 		}
 
-		if (req.user!.role !== "ADMIN") {
-			return res
-				.status(403)
-				.json({ message: "Apenas ADMIN pode finalizar consulta" });
-		}
-
 		await appointment.update({
 			diagnosis,
 			notes,
@@ -132,6 +120,7 @@ export const completeAppointment = async (req: Request, res: Response) => {
 export const listAppointmentsByPet = async (req: Request, res: Response) => {
 	try {
 		const { pet_id } = req.params;
+		const { start, end } = req.query;
 
 		if (!req.user!.clinic_id) {
 			return res.status(400).json({
@@ -147,11 +136,19 @@ export const listAppointmentsByPet = async (req: Request, res: Response) => {
 			});
 		}
 
+		const whereClause: any = {
+			clinic_id: req.user!.clinic_id,
+			pet_id,
+		};
+
+		if (start && end) {
+			whereClause.date = {
+				[Op.between]: [new Date(start as string), new Date(end as string)],
+			};
+		}
+
 		const appointments = await Appointment.findAll({
-			where: {
-				clinic_id: req.user!.clinic_id,
-				pet_id,
-			},
+			where: whereClause,
 			order: [["date", "ASC"]],
 		});
 

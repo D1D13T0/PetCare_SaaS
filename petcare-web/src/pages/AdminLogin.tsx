@@ -1,33 +1,34 @@
 import { useState } from 'react';
-import { toast } from 'react-hot-toast';
+import toast from 'react-hot-toast';
 import { Link, useNavigate } from 'react-router-dom';
 import Logo from '../components/layout/Logo';
-import api from '../services/api';
+import { useAuth } from '../context/AuthContext';
 
-export default function Register() {
+export default function AdminLogin() {
+	const { login, logout } = useAuth();
 	const navigate = useNavigate();
 
 	const [loading, setLoading] = useState(false);
 	const [email, setEmail] = useState('');
 	const [password, setPassword] = useState('');
-	const [confirmPassword, setConfirmPassword] = useState('');
 
-	async function handleRegister(e: { preventDefault(): void }) {
+	async function handleLogin(e: { preventDefault(): void }) {
 		e.preventDefault();
-
-		if (password !== confirmPassword) {
-			toast.error('As senhas não coincidem');
-			return;
-		}
-
 		setLoading(true);
-
 		try {
-			await api.post('/auth/register', { email, password });
-			toast.success('Conta criada! Faça login para continuar.');
-			navigate('/login');
-		} catch (error: any) {
-			toast.error(error.response?.data?.message || 'Erro ao registrar');
+			await login(email, password);
+
+			const user = JSON.parse(localStorage.getItem('user') ?? 'null');
+			if (user?.role !== 'ADMIN') {
+				logout();
+				toast.error('Acesso restrito a administradores');
+				return;
+			}
+
+			toast.success('Login realizado com sucesso!');
+			navigate(user.clinic_id ? '/home' : '/onboarding');
+		} catch {
+			toast.error('Email ou senha inválidos');
 		} finally {
 			setLoading(false);
 		}
@@ -40,11 +41,14 @@ export default function Register() {
 					<Logo />
 				</div>
 
-				<h1 className="text-2xl font-semibold text-gray-800 text-center mb-6">
-					Criar conta
+				<h1 className="text-2xl font-semibold text-gray-800 text-center mb-1">
+					Acesso Administrativo
 				</h1>
+				<p className="text-sm text-gray-500 text-center mb-6">
+					Área exclusiva para administradores de clínica
+				</p>
 
-				<form onSubmit={handleRegister} className="flex flex-col gap-4">
+				<form onSubmit={handleLogin} className="flex flex-col gap-4">
 					<div>
 						<label className="text-sm text-gray-700">Email</label>
 						<input
@@ -67,30 +71,18 @@ export default function Register() {
 						/>
 					</div>
 
-					<div>
-						<label className="text-sm text-gray-700">Confirmar senha</label>
-						<input
-							type="password"
-							value={confirmPassword}
-							onChange={(e) => setConfirmPassword(e.target.value)}
-							className="w-full border border-gray-300 rounded-lg px-3 py-2 mt-1 focus:outline-none focus:ring-2 focus:ring-emerald-500"
-							required
-						/>
-					</div>
-
 					<button
 						type="submit"
 						disabled={loading}
 						className="w-full bg-emerald-600 hover:bg-emerald-700 text-white cursor-pointer font-semibold py-2.5 rounded-lg transition disabled:opacity-50"
 					>
-						{loading ? 'Criando conta...' : 'Criar conta'}
+						{loading ? 'Entrando...' : 'Entrar como administrador'}
 					</button>
 				</form>
 
-				<p className="text-sm text-center text-gray-500 mt-4">
-					Já possui conta?{' '}
-					<Link to="/login" className="text-emerald-600 font-medium hover:text-emerald-700">
-						Fazer login
+				<p className="text-xs text-center text-gray-400 mt-4">
+					<Link to="/login" className="hover:text-gray-600 transition">
+						← Voltar ao login
 					</Link>
 				</p>
 			</div>
