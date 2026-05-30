@@ -1,4 +1,4 @@
-import { ReactNode } from 'react';
+import type { ReactNode } from 'react';
 
 interface ModalProps {
 	isOpen: boolean;
@@ -18,7 +18,7 @@ export default function Modal({ isOpen, onClose, children }: ModalProps) {
 			/>
 
 			{/* Modal content */}
-			<div className="relative bg-white rounded-2xl shadow-xl w-full max-w-lg p-6 z-10 animate-[fadeIn_.2s_ease-out]">
+			<div className="relative bg-white rounded-2xl shadow-xl w-full max-w-lg mx-4 p-6 z-10 animate-[fadeIn_.2s_ease-out] max-h-[90vh] overflow-y-auto">
 				{children}
 			</div>
 		</div>

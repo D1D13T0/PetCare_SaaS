@@ -12,7 +12,7 @@ export const createAppointment = async (req: Request, res: Response) => {
 			});
 		}
 
-		const { pet_id, veterinarian_id, date, diagnosis, notes } = req.body;
+		const { pet_id, veterinarian_id, date, diagnosis, notes, valor } = req.body;
 
 		if (!pet_id || !veterinarian_id || !date) {
 			return res.status(400).json({
@@ -41,6 +41,7 @@ export const createAppointment = async (req: Request, res: Response) => {
 			date,
 			diagnosis,
 			notes,
+			valor,
 		});
 
 		return res.status(201).json(appointment);
@@ -53,6 +54,75 @@ export const createAppointment = async (req: Request, res: Response) => {
 	}
 };
 
+export const getFinancialReport = async (req: Request, res: Response) => {
+	try {
+		if (!req.user!.clinic_id) {
+			return res.status(400).json({ message: "Você não pertence a nenhuma clínica" });
+		}
+
+		const { start, end } = req.query;
+		let startDate: Date, endDate: Date;
+
+		if (start && end) {
+			startDate = new Date(start as string);
+			endDate = new Date(end as string);
+			endDate.setHours(23, 59, 59, 999);
+		} else {
+			startDate = new Date();
+			startDate.setDate(1);
+			startDate.setHours(0, 0, 0, 0);
+			endDate = new Date();
+			endDate.setMonth(endDate.getMonth() + 1);
+			endDate.setDate(0);
+			endDate.setHours(23, 59, 59, 999);
+		}
+
+		const appointments = await Appointment.findAll({
+			where: {
+				clinic_id: req.user!.clinic_id,
+				status: "COMPLETED",
+				date: { [Op.between]: [startDate, endDate] },
+			},
+			include: [{ model: Pet, attributes: ["id", "name"] }],
+			order: [["date", "DESC"]],
+		});
+
+		const total = appointments.reduce((sum, a) => sum + (Number(a.valor) || 0), 0);
+
+		return res.json({ appointments, total, count: appointments.length });
+	} catch (error) {
+		console.error(error);
+		return res.status(500).json({ message: "Erro ao gerar relatório financeiro" });
+	}
+};
+
+export const cancelAppointment = async (req: Request, res: Response) => {
+	try {
+		const { id } = req.params;
+
+		const appointment = await Appointment.findByPk(id as string);
+
+		if (!appointment) {
+			return res.status(404).json({ message: "Agendamento não encontrado" });
+		}
+
+		if (appointment.clinic_id !== req.user!.clinic_id) {
+			return res.status(403).json({ message: "Acesso negado" });
+		}
+
+		if (appointment.status === "COMPLETED" || appointment.status === "CANCELLED") {
+			return res.status(400).json({ message: "Agendamento não pode ser cancelado" });
+		}
+
+		await appointment.update({ status: "CANCELLED" });
+
+		return res.json(appointment);
+	} catch (error) {
+		console.error(error);
+		return res.status(500).json({ message: "Erro ao cancelar agendamento" });
+	}
+};
+
 export const listAppointments = async (req: Request, res: Response) => {
 	try {
 		if (!req.user!.clinic_id) {
@@ -61,11 +131,9 @@ export const listAppointments = async (req: Request, res: Response) => {
 			});
 		}
 
-		const { start, end } = req.query;
+		const { start, end, limit, offset } = req.query;
 
-		const whereClause: any = {
-			clinic_id: req.user!.clinic_id,
-		};
+		const whereClause: any = { clinic_id: req.user!.clinic_id };
 
 		if (start && end) {
 			whereClause.date = {
@@ -75,7 +143,9 @@ export const listAppointments = async (req: Request, res: Response) => {
 
 		const appointments = await Appointment.findAll({
 			where: whereClause,
-			order: [["date", "ASC"]],
+			limit: limit ? parseInt(limit as string) : 10,
+			offset: offset ? parseInt(offset as string) : 0,
+			order: [["date", "DESC"]],
 		});
 
 		return res.json(appointments);
@@ -90,9 +160,9 @@ export const listAppointments = async (req: Request, res: Response) => {
 export const completeAppointment = async (req: Request, res: Response) => {
 	try {
 		const { id } = req.params;
-		const { diagnosis, notes } = req.body;
+		const { diagnosis, notes, valor } = req.body;
 
-		const appointment = await Appointment.findByPk(id);
+		const appointment = await Appointment.findByPk(id as string);
 
 		if (!appointment) {
 			return res.status(404).json({ message: "Agendamento não encontrado" });
@@ -105,6 +175,7 @@ export const completeAppointment = async (req: Request, res: Response) => {
 		await appointment.update({
 			diagnosis,
 			notes,
+			valor,
 			status: "COMPLETED",
 		});
 
@@ -128,7 +199,7 @@ export const listAppointmentsByPet = async (req: Request, res: Response) => {
 			});
 		}
 
-		const pet = await Pet.findByPk(pet_id);
+		const pet = await Pet.findByPk(pet_id as string);
 
 		if (!pet || pet.clinic_id !== req.user!.clinic_id) {
 			return res.status(404).json({

@@ -1,6 +1,8 @@
 import { createContext, type ReactNode, useContext, useState } from 'react';
 import api from '../services/api';
 
+const LIMIT = 10;
+
 interface Pet {
 	id: string;
 	name: string;
@@ -15,7 +17,9 @@ interface Pet {
 interface PetContextType {
 	pets: Pet[];
 	loading: boolean;
-	fetchPets: () => Promise<void>;
+	hasMore: boolean;
+	fetchPets: (search?: string) => Promise<void>;
+	loadMore: () => Promise<void>;
 	createPet: (data: Partial<Pet>) => Promise<void>;
 	updatePet: (id: string, data: Partial<Pet>) => Promise<void>;
 	deletePet: (id: string) => Promise<void>;
@@ -26,12 +30,31 @@ const PetContext = createContext<PetContextType | null>(null);
 export function PetProvider({ children }: { children: ReactNode }) {
 	const [pets, setPets] = useState<Pet[]>([]);
 	const [loading, setLoading] = useState(false);
+	const [hasMore, setHasMore] = useState(false);
+	const [currentSearch, setCurrentSearch] = useState<string | undefined>();
 
-	async function fetchPets() {
+	async function fetchPets(search?: string) {
+		setLoading(true);
+		setCurrentSearch(search);
+		try {
+			const response = await api.get('/pets', {
+				params: { search, limit: LIMIT, offset: 0 },
+			});
+			setPets(response.data);
+			setHasMore(response.data.length === LIMIT);
+		} finally {
+			setLoading(false);
+		}
+	}
+
+	async function loadMore() {
 		setLoading(true);
 		try {
-			const response = await api.get('/pets');
-			setPets(response.data);
+			const response = await api.get('/pets', {
+				params: { search: currentSearch, limit: LIMIT, offset: pets.length },
+			});
+			setPets((prev) => [...prev, ...response.data]);
+			setHasMore(response.data.length === LIMIT);
 		} finally {
 			setLoading(false);
 		}
@@ -39,7 +62,7 @@ export function PetProvider({ children }: { children: ReactNode }) {
 
 	async function createPet(data: Partial<Pet>) {
 		await api.post('/pets', data);
-		await fetchPets();
+		await fetchPets(currentSearch);
 	}
 
 	async function updatePet(id: string, data: Partial<Pet>) {
@@ -53,7 +76,7 @@ export function PetProvider({ children }: { children: ReactNode }) {
 	}
 
 	return (
-		<PetContext.Provider value={{ pets, loading, fetchPets, createPet, updatePet, deletePet }}>
+		<PetContext.Provider value={{ pets, loading, hasMore, fetchPets, loadMore, createPet, updatePet, deletePet }}>
 			{children}
 		</PetContext.Provider>
 	);
@@ -61,8 +84,6 @@ export function PetProvider({ children }: { children: ReactNode }) {
 
 export function usePets() {
 	const context = useContext(PetContext);
-	if (!context) {
-		throw new Error('usePets must be used inside PetProvider');
-	}
+	if (!context) throw new Error('usePets must be used inside PetProvider');
 	return context;
 }

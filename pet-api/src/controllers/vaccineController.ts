@@ -48,6 +48,7 @@ export const createVaccine = async (req: Request, res: Response) => {
 export const listVaccinesByPet = async (req: Request, res: Response) => {
 	try {
 		const { pet_id } = req.params;
+		const { start, end } = req.query;
 
 		if (!req.user?.clinic_id) {
 			return res.status(400).json({
@@ -55,11 +56,16 @@ export const listVaccinesByPet = async (req: Request, res: Response) => {
 			});
 		}
 
+		const where: any = { clinic_id: req.user.clinic_id, pet_id };
+
+		if (start && end) {
+			where.application_date = {
+				[Op.between]: [new Date(start as string), new Date(end as string)],
+			};
+		}
+
 		const vaccines = await Vaccine.findAll({
-			where: {
-				clinic_id: req.user.clinic_id,
-				pet_id,
-			},
+			where,
 			order: [["application_date", "DESC"]],
 		});
 
@@ -133,6 +139,7 @@ export const getUpcomingVaccines = async (req: Request, res: Response) => {
 					[Op.between]: [today, futureDate],
 				},
 			},
+			include: [{ model: Pet, attributes: ["id", "name"] }],
 			order: [["next_dose_date", "ASC"]],
 		});
 

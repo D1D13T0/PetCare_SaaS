@@ -13,54 +13,44 @@ export const getDashboard = async (req: Request, res: Response) => {
 		}
 
 		const clinic_id = req.user.clinic_id;
+		const { start, end } = req.query;
 
-		// 📌 Total de pets
-		const totalPets = await Pet.count({
-			where: { clinic_id },
-		});
+		let startDate: Date;
+		let endDate: Date;
 
-		// 📌 Consultas do mês atual
-		const startOfMonth = new Date();
-		startOfMonth.setDate(1);
-		startOfMonth.setHours(0, 0, 0, 0);
+		if (start && end) {
+			startDate = new Date(start as string);
+			endDate = new Date(end as string);
+			endDate.setHours(23, 59, 59, 999);
+		} else {
+			startDate = new Date();
+			startDate.setDate(1);
+			startDate.setHours(0, 0, 0, 0);
+			endDate = new Date();
+			endDate.setMonth(endDate.getMonth() + 1);
+			endDate.setDate(0);
+			endDate.setHours(23, 59, 59, 999);
+		}
 
-		const endOfMonth = new Date();
-		endOfMonth.setMonth(endOfMonth.getMonth() + 1);
-		endOfMonth.setDate(0);
-		endOfMonth.setHours(23, 59, 59, 999);
+		const totalPets = await Pet.count({ where: { clinic_id } });
 
 		const appointmentsThisMonth = await Appointment.count({
 			where: {
 				clinic_id,
-				date: {
-					[Op.between]: [startOfMonth, endOfMonth],
-				},
+				date: { [Op.between]: [startDate, endDate] },
 			},
 		});
-
-		// 📌 Vacinas próximas (7 dias)
-		const today = new Date();
-		const futureDate = new Date();
-		futureDate.setDate(today.getDate() + 7);
 
 		const upcomingVaccines = await Vaccine.count({
 			where: {
 				clinic_id,
-				next_dose_date: {
-					[Op.between]: [today, futureDate],
-				},
+				next_dose_date: { [Op.between]: [startDate, endDate] },
 			},
 		});
 
-		return res.json({
-			totalPets,
-			appointmentsThisMonth,
-			upcomingVaccines,
-		});
+		return res.json({ totalPets, appointmentsThisMonth, upcomingVaccines });
 	} catch (error) {
 		console.error(error);
-		return res.status(500).json({
-			message: "Erro ao carregar dashboard",
-		});
+		return res.status(500).json({ message: "Erro ao carregar dashboard" });
 	}
 };

@@ -9,6 +9,7 @@ export interface Appointment {
 	status: AppointmentStatus;
 	diagnosis?: string;
 	notes?: string;
+	valor?: number;
 }
 
 export interface CreateAppointmentDTO {
@@ -16,9 +17,11 @@ export interface CreateAppointmentDTO {
 	veterinarian_id: string;
 	date: string;
 	notes?: string;
+	valor?: number;
 }
 
 export interface CompleteAppointmentDTO {
 	diagnosis: string;
 	notes?: string;
+	valor?: number;
 }

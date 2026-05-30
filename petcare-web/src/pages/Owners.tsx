@@ -3,6 +3,7 @@ import { useEffect, useState } from 'react';
 import toast from 'react-hot-toast';
 import Layout from '../components/layout/Layout';
 import Button from '../components/ui/Button';
+import ConfirmModal from '../components/ui/ConfirmModal';
 import Modal from '../components/ui/Modal';
 import { useOwners } from '../context/OwnerContext';
 import type { Owner } from '../types/owner';
@@ -11,7 +12,7 @@ const inputClass =
 	'w-full border border-gray-300 rounded-lg px-3 py-2 mt-1 focus:ring-2 focus:ring-emerald-500 focus:outline-none';
 
 export function Owners() {
-	const { owners, loading, fetchOwners, createOwner, updateOwner, deleteOwner } = useOwners();
+	const { owners, loading, hasMore, fetchOwners, loadMore, createOwner, updateOwner, deleteOwner } = useOwners();
 	const [search, setSearch] = useState('');
 
 	const [isCreateOpen, setIsCreateOpen] = useState(false);
@@ -20,6 +21,7 @@ export function Owners() {
 	const [loadingCreate, setLoadingCreate] = useState(false);
 	const [loadingEdit, setLoadingEdit] = useState(false);
 	const [loadingDeleteId, setLoadingDeleteId] = useState<string | null>(null);
+	const [confirmDelete, setConfirmDelete] = useState<{ id: string; name: string } | null>(null);
 
 	const [name, setName] = useState('');
 	const [email, setEmail] = useState('');
@@ -89,8 +91,10 @@ export function Owners() {
 		}
 	}
 
-	async function handleDelete(id: string, ownerName: string) {
-		if (!confirm(`Deseja excluir o dono "${ownerName}"?`)) return;
+	async function handleDelete() {
+		if (!confirmDelete) return;
+		const { id } = confirmDelete;
+		setConfirmDelete(null);
 		setLoadingDeleteId(id);
 		try {
 			await deleteOwner(id);
@@ -105,7 +109,7 @@ export function Owners() {
 
 	return (
 		<Layout>
-			<div className="flex items-center justify-between mb-8">
+			<div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
 				<div>
 					<h1 className="text-3xl font-semibold text-gray-800">Donos</h1>
 					<p className="text-gray-500 text-sm">Gerencie os donos de pets da sua clínica</p>
@@ -129,7 +133,7 @@ export function Owners() {
 				/>
 			</div>
 
-			<div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+			<div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-x-auto">
 				{loading ? (
 					<div className="p-8 text-center text-gray-500">Carregando donos...</div>
 				) : owners.length === 0 ? (
@@ -138,7 +142,7 @@ export function Owners() {
 						<p className="text-gray-500">Nenhum dono cadastrado ainda.</p>
 					</div>
 				) : (
-					<table className="w-full text-sm">
+					<table className="min-w-full text-sm">
 						<thead className="bg-gray-50 text-gray-600">
 							<tr>
 								<th className="text-left px-8 py-4 font-medium">Nome</th>
@@ -165,7 +169,7 @@ export function Owners() {
 												<Pencil width={16} height={16} />
 											</button>
 											<button
-												onClick={() => handleDelete(owner.id, owner.name)}
+												onClick={() => setConfirmDelete({ id: owner.id, name: owner.name })}
 												disabled={loadingDeleteId === owner.id}
 												className="text-gray-400 hover:text-red-500 transition disabled:opacity-50 cursor-pointer"
 												title="Excluir dono"
@@ -180,6 +184,28 @@ export function Owners() {
 					</table>
 				)}
 			</div>
+
+			{hasMore && (
+				<div className="flex justify-center mt-4">
+					<button
+						onClick={loadMore}
+						disabled={loading}
+						className="px-6 py-2 text-sm font-medium text-emerald-600 border border-emerald-300 rounded-lg hover:bg-emerald-50 transition cursor-pointer disabled:opacity-50"
+					>
+						{loading ? 'Carregando...' : 'Carregar mais'}
+					</button>
+				</div>
+			)}
+
+			<ConfirmModal
+				isOpen={!!confirmDelete}
+				title="Excluir dono"
+				message={`Deseja excluir o dono "${confirmDelete?.name}"?`}
+				confirmLabel="Excluir"
+				onConfirm={handleDelete}
+				onClose={() => setConfirmDelete(null)}
+				loading={!!loadingDeleteId}
+			/>
 
 			{/* Modal: Novo Dono */}
 			<Modal isOpen={isCreateOpen} onClose={() => { setIsCreateOpen(false); resetForm(); }}>

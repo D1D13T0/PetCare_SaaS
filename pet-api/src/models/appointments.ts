@@ -10,6 +10,7 @@ interface AppointmentAttributes {
 	status: "SCHEDULED" | "CONFIRMED" | "CANCELLED" | "COMPLETED";
 	diagnosis?: string;
 	notes?: string;
+	valor?: number;
 	createdAt?: Date;
 	updatedAt?: Date;
 }
@@ -29,6 +30,7 @@ class Appointment
 	public status!: "SCHEDULED" | "CONFIRMED" | "CANCELLED" | "COMPLETED";
 	public diagnosis?: string;
 	public notes?: string;
+	public valor?: number;
 
 	public readonly createdAt!: Date;
 	public readonly updatedAt!: Date;
@@ -66,6 +68,10 @@ Appointment.init(
 		},
 		notes: {
 			type: DataTypes.TEXT,
+		},
+		valor: {
+			type: DataTypes.DECIMAL(10, 2),
+			allowNull: true,
 		},
 	},
 	{

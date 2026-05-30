@@ -39,6 +39,37 @@ export const register = async (req: Request, res: Response) => {
 	}
 };
 
+export const changePassword = async (req: Request, res: Response) => {
+	try {
+		const { currentPassword, newPassword } = req.body;
+
+		if (!currentPassword || !newPassword) {
+			return res.status(400).json({ message: "Senha atual e nova senha são obrigatórias" });
+		}
+
+		if (newPassword.length < 6) {
+			return res.status(400).json({ message: "A nova senha deve ter pelo menos 6 caracteres" });
+		}
+
+		const user = await User.findByPk(req.user!.id);
+		if (!user) {
+			return res.status(404).json({ message: "Usuário não encontrado" });
+		}
+
+		const isValid = await bcrypt.compare(currentPassword, user.password);
+		if (!isValid) {
+			return res.status(400).json({ message: "Senha atual incorreta" });
+		}
+
+		const hashed = await bcrypt.hash(newPassword, 10);
+		await user.update({ password: hashed });
+
+		return res.json({ message: "Senha alterada com sucesso" });
+	} catch (error) {
+		return res.status(500).json({ message: "Erro ao alterar senha" });
+	}
+};
+
 export const googleLogin = async (req: Request, res: Response) => {
 	try {
 		const { idToken } = req.body;

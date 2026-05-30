@@ -3,6 +3,7 @@ import { useEffect, useState } from 'react';
 import toast from 'react-hot-toast';
 import Layout from '../components/layout/Layout';
 import Button from '../components/ui/Button';
+import ConfirmModal from '../components/ui/ConfirmModal';
 import Modal from '../components/ui/Modal';
 import api from '../services/api';
 import type { Vaccine } from '../types/vaccine';
@@ -36,6 +37,7 @@ export function Vaccines() {
 	const [loadingCreate, setLoadingCreate] = useState(false);
 	const [loadingEdit, setLoadingEdit] = useState(false);
 	const [loadingDeleteId, setLoadingDeleteId] = useState<string | null>(null);
+	const [confirmDelete, setConfirmDelete] = useState<{ id: string; name: string } | null>(null);
 
 	const [vaccineName, setVaccineName] = useState('');
 	const [applicationDate, setApplicationDate] = useState('');
@@ -162,8 +164,10 @@ export function Vaccines() {
 		}
 	}
 
-	async function handleDelete(id: string, name: string) {
-		if (!confirm(`Deseja excluir a vacina "${name}"?`)) return;
+	async function handleDelete() {
+		if (!confirmDelete) return;
+		const { id } = confirmDelete;
+		setConfirmDelete(null);
 		setLoadingDeleteId(id);
 		try {
 			await api.delete(`/vaccines/${id}`);
@@ -179,7 +183,7 @@ export function Vaccines() {
 
 	return (
 		<Layout>
-			<div className="flex items-center justify-between mb-8">
+			<div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
 				<div>
 					<h1 className="text-3xl font-semibold text-gray-800">Vacinas</h1>
 					<p className="text-gray-500 text-sm">Histórico de vacinação por pet</p>
@@ -241,7 +245,7 @@ export function Vaccines() {
 			</div>
 
 			{/* Tabela de vacinas */}
-			<div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+			<div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-x-auto">
 				{!petId ? (
 					<div className="p-12 text-center flex flex-col items-center gap-3">
 						<Shield className="text-gray-300" width={48} height={48} />
@@ -255,7 +259,7 @@ export function Vaccines() {
 						<p className="text-gray-500">Nenhuma vacina registrada para <strong>{petName}</strong>.</p>
 					</div>
 				) : (
-					<table className="w-full text-sm">
+					<table className="min-w-full text-sm">
 						<thead className="bg-gray-50 text-gray-600">
 							<tr>
 								<th className="text-left px-8 py-4 font-medium">Vacina</th>
@@ -291,7 +295,7 @@ export function Vaccines() {
 												<Pencil width={16} height={16} />
 											</button>
 											<button
-												onClick={() => handleDelete(vaccine.id, vaccine.name)}
+												onClick={() => setConfirmDelete({ id: vaccine.id, name: vaccine.name })}
 												disabled={loadingDeleteId === vaccine.id}
 												className="text-gray-400 hover:text-red-500 transition disabled:opacity-50 cursor-pointer"
 												title="Excluir vacina"
@@ -382,6 +386,16 @@ export function Vaccines() {
 					</div>
 				</form>
 			</Modal>
+
+			<ConfirmModal
+				isOpen={!!confirmDelete}
+				title="Excluir vacina"
+				message={`Deseja excluir a vacina "${confirmDelete?.name}"?`}
+				confirmLabel="Excluir"
+				onConfirm={handleDelete}
+				onClose={() => setConfirmDelete(null)}
+				loading={!!loadingDeleteId}
+			/>
 		</Layout>
 	);
 }

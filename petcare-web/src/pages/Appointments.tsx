@@ -1,8 +1,9 @@
-import { CalendarDays, CheckCircle, Plus, X } from 'lucide-react';
+import { Ban, CalendarDays, CheckCircle, Plus, X } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import toast from 'react-hot-toast';
 import Layout from '../components/layout/Layout';
 import Button from '../components/ui/Button';
+import ConfirmModal from '../components/ui/ConfirmModal';
 import Modal from '../components/ui/Modal';
 import { useAppointments } from '../context/AppointmentContext';
 import { useAuth } from '../context/AuthContext';
@@ -35,7 +36,7 @@ function formatDate(date: string) {
 }
 
 export function Appointments() {
-	const { appointments, loading, fetchAppointments, createAppointment, completeAppointment } =
+	const { appointments, loading, hasMore, fetchAppointments, loadMore, createAppointment, completeAppointment, cancelAppointment } =
 		useAppointments();
 	const { pets, fetchPets } = usePets();
 	const { user } = useAuth();
@@ -46,8 +47,12 @@ export function Appointments() {
 	const [filterPetName, setFilterPetName] = useState('');
 	const [filterPetResults, setFilterPetResults] = useState<any[]>([]);
 	const [filterPetLoading, setFilterPetLoading] = useState(false);
-	const [filterStart, setFilterStart] = useState('');
-	const [filterEnd, setFilterEnd] = useState('');
+	const now = new Date();
+	const defaultStart = new Date(now.getFullYear(), now.getMonth(), 1).toISOString().slice(0, 10);
+	const defaultEnd = new Date(now.getFullYear(), now.getMonth() + 1, 0).toISOString().slice(0, 10);
+
+	const [filterStart, setFilterStart] = useState(defaultStart);
+	const [filterEnd, setFilterEnd] = useState(defaultEnd);
 
 	// Create modal state
 	const [isCreateOpen, setIsCreateOpen] = useState(false);
@@ -60,14 +65,18 @@ export function Appointments() {
 	const [petSearchLoading, setPetSearchLoading] = useState(false);
 	const [date, setDate] = useState('');
 	const [notes, setNotes] = useState('');
+	const [valor, setValor] = useState('');
 	const [loadingCreate, setLoadingCreate] = useState(false);
 
 	const [diagnosis, setDiagnosis] = useState('');
 	const [completeNotes, setCompleteNotes] = useState('');
+	const [completeValor, setCompleteValor] = useState('');
 	const [loadingComplete, setLoadingComplete] = useState(false);
+	const [loadingCancelId, setLoadingCancelId] = useState<string | null>(null);
+	const [confirmCancelId, setConfirmCancelId] = useState<string | null>(null);
 
 	useEffect(() => {
-		fetchAppointments();
+		fetchAppointments({ start: defaultStart, end: defaultEnd });
 		fetchPets();
 	}, []);
 
@@ -152,9 +161,9 @@ export function Appointments() {
 
 	function clearFilters() {
 		clearFilterPet();
-		setFilterStart('');
-		setFilterEnd('');
-		fetchAppointments();
+		setFilterStart(defaultStart);
+		setFilterEnd(defaultEnd);
+		fetchAppointments({ start: defaultStart, end: defaultEnd });
 	}
 
 	const hasFilters = filterPetId || filterStart || filterEnd;
@@ -169,11 +178,13 @@ export function Appointments() {
 		setPetResults([]);
 		setDate('');
 		setNotes('');
+		setValor('');
 	}
 
 	function resetComplete() {
 		setDiagnosis('');
 		setCompleteNotes('');
+		setCompleteValor('');
 		setSelectedAppointment(null);
 	}
 
@@ -190,6 +201,7 @@ export function Appointments() {
 				veterinarian_id: user.id,
 				date,
 				notes: notes || undefined,
+				valor: valor ? Number(valor) : undefined,
 			});
 			toast.success('Consulta agendada com sucesso!');
 			setIsCreateOpen(false);
@@ -210,6 +222,7 @@ export function Appointments() {
 			const data: CompleteAppointmentDTO = {
 				diagnosis,
 				notes: completeNotes || undefined,
+				valor: completeValor ? Number(completeValor) : undefined,
 			};
 			await completeAppointment(selectedAppointment.id, data);
 			toast.success('Consulta concluída!');
@@ -223,6 +236,21 @@ export function Appointments() {
 		}
 	}
 
+	async function handleCancel() {
+		if (!confirmCancelId) return;
+		const id = confirmCancelId;
+		setConfirmCancelId(null);
+		setLoadingCancelId(id);
+		try {
+			await cancelAppointment(id);
+			toast.success('Consulta cancelada');
+		} catch (err: any) {
+			toast.error(err?.response?.data?.message ?? 'Erro ao cancelar consulta');
+		} finally {
+			setLoadingCancelId(null);
+		}
+	}
+
 	function openComplete(appointment: Appointment) {
 		setSelectedAppointment(appointment);
 		setDiagnosis(appointment.diagnosis ?? '');
@@ -232,7 +260,7 @@ export function Appointments() {
 
 	return (
 		<Layout>
-			<div className="flex items-center justify-between mb-8">
+			<div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
 				<div>
 					<h1 className="text-3xl font-semibold text-gray-800">Consultas</h1>
 					<p className="text-gray-500 text-sm">Gerencie as consultas da sua clínica</p>
@@ -292,23 +320,23 @@ export function Appointments() {
 					)}
 				</div>
 
-				<div>
+				<div className="w-full sm:w-auto">
 					<label className="text-xs font-medium text-gray-600 block mb-1">De</label>
 					<input
 						type="date"
 						value={filterStart}
 						onChange={(e) => setFilterStart(e.target.value)}
-						className="border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-emerald-500 focus:outline-none"
+						className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-emerald-500 focus:outline-none"
 					/>
 				</div>
 
-				<div>
+				<div className="w-full sm:w-auto">
 					<label className="text-xs font-medium text-gray-600 block mb-1">Até</label>
 					<input
 						type="date"
 						value={filterEnd}
 						onChange={(e) => setFilterEnd(e.target.value)}
-						className="border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-emerald-500 focus:outline-none"
+						className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-emerald-500 focus:outline-none"
 					/>
 				</div>
 
@@ -335,7 +363,7 @@ export function Appointments() {
 				</p>
 			)}
 
-			<div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+			<div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-x-auto">
 				{loading ? (
 					<div className="p-8 text-center text-gray-500">Carregando consultas...</div>
 				) : appointments.length === 0 ? (
@@ -344,7 +372,7 @@ export function Appointments() {
 						<p className="text-gray-500">Nenhuma consulta encontrada.</p>
 					</div>
 				) : (
-					<table className="w-full text-sm">
+					<table className="min-w-full text-sm">
 						<thead className="bg-gray-50 text-gray-600">
 							<tr>
 								<th className="text-left px-8 py-4 font-medium">Data</th>
@@ -367,13 +395,23 @@ export function Appointments() {
 									</td>
 									<td className="px-8 py-4 text-right">
 										{(appointment.status === 'SCHEDULED' || appointment.status === 'CONFIRMED') && (
-											<button
-												onClick={() => openComplete(appointment)}
-												className="flex items-center gap-1 text-xs text-emerald-600 hover:text-emerald-800 font-medium transition cursor-pointer ml-auto"
-											>
-												<CheckCircle width={14} height={14} />
-												Concluir
-											</button>
+											<div className="flex items-center justify-end gap-3">
+												<button
+													onClick={() => openComplete(appointment)}
+													className="flex items-center gap-1 text-xs text-emerald-600 hover:text-emerald-800 font-medium transition cursor-pointer"
+												>
+													<CheckCircle width={14} height={14} />
+													Concluir
+												</button>
+												<button
+													onClick={() => setConfirmCancelId(appointment.id)}
+													disabled={loadingCancelId === appointment.id}
+													className="flex items-center gap-1 text-xs text-red-400 hover:text-red-600 font-medium transition cursor-pointer disabled:opacity-50"
+												>
+													<Ban width={14} height={14} />
+													Cancelar
+												</button>
+											</div>
 										)}
 									</td>
 								</tr>
@@ -382,6 +420,29 @@ export function Appointments() {
 					</table>
 				)}
 			</div>
+
+			{hasMore && (
+				<div className="flex justify-center mt-4">
+					<button
+						onClick={loadMore}
+						disabled={loading}
+						className="px-6 py-2 text-sm font-medium text-emerald-600 border border-emerald-300 rounded-lg hover:bg-emerald-50 transition cursor-pointer disabled:opacity-50"
+					>
+						{loading ? 'Carregando...' : 'Carregar mais'}
+					</button>
+				</div>
+			)}
+
+			<ConfirmModal
+				isOpen={!!confirmCancelId}
+				title="Cancelar consulta"
+				message="Deseja cancelar esta consulta? Esta ação não pode ser desfeita."
+				confirmLabel="Cancelar consulta"
+				variant="warning"
+				onConfirm={handleCancel}
+				onClose={() => setConfirmCancelId(null)}
+				loading={!!loadingCancelId}
+			/>
 
 			{/* Modal: Nova Consulta */}
 			<Modal isOpen={isCreateOpen} onClose={() => { setIsCreateOpen(false); resetCreate(); }}>
@@ -432,6 +493,21 @@ export function Appointments() {
 						/>
 					</div>
 
+					<div className="grid grid-cols-2 gap-4">
+						<div>
+							<label className="text-sm text-gray-600">Valor (R$)</label>
+							<input
+								type="number"
+								min="0"
+								step="0.01"
+								value={valor}
+								onChange={(e) => setValor(e.target.value)}
+								placeholder="0,00"
+								className="w-full border border-gray-300 rounded-lg px-3 py-2 mt-1 focus:ring-2 focus:ring-emerald-500 focus:outline-none"
+							/>
+						</div>
+					</div>
+
 					<div>
 						<label className="text-sm text-gray-600">Observações</label>
 						<textarea
@@ -468,6 +544,18 @@ export function Appointments() {
 					</p>
 				)}
 				<form onSubmit={handleComplete} className="flex flex-col gap-4">
+					<div>
+						<label className="text-sm text-gray-600">Valor (R$)</label>
+						<input
+							type="number"
+							min="0"
+							step="0.01"
+							value={completeValor}
+							onChange={(e) => setCompleteValor(e.target.value)}
+							placeholder="0,00"
+							className="w-full border border-gray-300 rounded-lg px-3 py-2 mt-1 focus:ring-2 focus:ring-emerald-500 focus:outline-none"
+						/>
+					</div>
 					<div>
 						<label className="text-sm text-gray-600">Diagnóstico</label>
 						<textarea

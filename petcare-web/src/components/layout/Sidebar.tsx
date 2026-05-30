@@ -1,100 +1,46 @@
-import { NavLink } from "react-router-dom";
-import { useAuth } from "../../context/AuthContext";
+import { NavLink } from 'react-router-dom';
+import { useAuth } from '../../context/AuthContext';
 
-export default function Sidebar() {
-  const { user } = useAuth();
-  const isAdmin = user?.role === "ADMIN";
+interface SidebarProps {
+	isOpen: boolean;
+	onClose: () => void;
+}
 
-  return (
-    <div className="w-64 bg-white border-r border-gray-200 min-h-screen p-6">
+const navClass = ({ isActive }: { isActive: boolean }) =>
+	`px-3 py-2 rounded-lg transition ${
+		isActive
+			? 'bg-emerald-100 text-emerald-700 font-medium'
+			: 'text-gray-600 hover:bg-gray-100'
+	}`;
 
-      <h2 className="text-xl font-bold text-emerald-600 mb-10">
-        🐾 PetCare
-      </h2>
+export default function Sidebar({ isOpen, onClose }: SidebarProps) {
+	const { user } = useAuth();
+	const isAdmin = user?.role === 'ADMIN';
 
-      <nav className="flex flex-col gap-4 text-sm">
+	return (
+		<aside
+			className={`
+				fixed inset-y-0 left-0 z-40 w-64 bg-white border-r border-gray-200 p-6
+				transform transition-transform duration-300 ease-in-out
+				${isOpen ? 'translate-x-0' : '-translate-x-full'}
+				lg:relative lg:translate-x-0 lg:flex lg:flex-col
+			`}
+		>
+			<h2 className="text-xl font-bold text-emerald-600 mb-10">
+				🐾 PetCare
+			</h2>
 
-        <NavLink
-          to="/home"
-          className={({ isActive }) =>
-            `px-3 py-2 rounded-lg transition ${
-              isActive
-                ? "bg-emerald-100 text-emerald-700 font-medium"
-                : "text-gray-600 hover:bg-gray-100"
-            }`
-          }
-        >
-          Dashboard
-        </NavLink>
-
-        <NavLink
-          to="/pets"
-          className={({ isActive }) =>
-            `px-3 py-2 rounded-lg transition ${
-              isActive
-                ? "bg-emerald-100 text-emerald-700 font-medium"
-                : "text-gray-600 hover:bg-gray-100"
-            }`
-          }
-        >
-          Pets
-        </NavLink>
-
-        <NavLink
-          to="/owners"
-          className={({ isActive }) =>
-            `px-3 py-2 rounded-lg transition ${
-              isActive
-                ? "bg-emerald-100 text-emerald-700 font-medium"
-                : "text-gray-600 hover:bg-gray-100"
-            }`
-          }
-        >
-          Donos
-        </NavLink>
-
-        <NavLink
-          to="/appointments"
-          className={({ isActive }) =>
-            `px-3 py-2 rounded-lg transition ${
-              isActive
-                ? "bg-emerald-100 text-emerald-700 font-medium"
-                : "text-gray-600 hover:bg-gray-100"
-            }`
-          }
-        >
-          Agendamentos
-        </NavLink>
-
-        <NavLink
-          to="/vaccines"
-          className={({ isActive }) =>
-            `px-3 py-2 rounded-lg transition ${
-              isActive
-                ? "bg-emerald-100 text-emerald-700 font-medium"
-                : "text-gray-600 hover:bg-gray-100"
-            }`
-          }
-        >
-          Vacinas
-        </NavLink>
-
-        {isAdmin && (
-          <NavLink
-            to="/clinic"
-            className={({ isActive }) =>
-              `px-3 py-2 rounded-lg transition ${
-                isActive
-                  ? "bg-emerald-100 text-emerald-700 font-medium"
-                  : "text-gray-600 hover:bg-gray-100"
-              }`
-            }
-          >
-            Clínica
-          </NavLink>
-        )}
-
-      </nav>
-    </div>
-  );
+			<nav className="flex flex-col gap-4 text-sm">
+				<NavLink to="/home" className={navClass} onClick={onClose}>Dashboard</NavLink>
+				<NavLink to="/pets" className={navClass} onClick={onClose}>Pets</NavLink>
+				<NavLink to="/owners" className={navClass} onClick={onClose}>Donos</NavLink>
+				<NavLink to="/appointments" className={navClass} onClick={onClose}>Agendamentos</NavLink>
+				<NavLink to="/vaccines" className={navClass} onClick={onClose}>Vacinas</NavLink>
+				<NavLink to="/financeiro" className={navClass} onClick={onClose}>Financeiro</NavLink>
+				{isAdmin && (
+					<NavLink to="/clinic" className={navClass} onClick={onClose}>Clínica</NavLink>
+				)}
+			</nav>
+		</aside>
+	);
 }

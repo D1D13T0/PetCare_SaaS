@@ -44,21 +44,19 @@ export const listOwners = async (req: Request, res: Response) => {
 			});
 		}
 
-		const { search } = req.query;
+		const { search, limit, offset } = req.query;
 
-		const where: any = {
-			clinic_id: req.user.clinic_id,
-		};
+		const where: any = { clinic_id: req.user.clinic_id };
 
 		if (search) {
-			where.name = {
-				[Op.iLike]: `%${search}%`,
-			};
+			where.name = { [Op.iLike]: `%${search}%` };
 		}
 
 		const owners = await Owner.findAll({
 			where,
-			order: [["createdAt", "DESC"]],
+			limit: limit ? parseInt(limit as string) : 10,
+			offset: offset ? parseInt(offset as string) : 0,
+			order: [['name', 'ASC']],
 		});
 
 		return res.json(owners);

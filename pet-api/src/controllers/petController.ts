@@ -56,7 +56,7 @@ export const listPets = async (req: Request, res: Response) => {
 			});
 		}
 
-		const { search } = req.query;
+		const { search, limit, offset } = req.query;
 
 		const where: any = { clinic_id: req.user.clinic_id };
 
@@ -64,7 +64,12 @@ export const listPets = async (req: Request, res: Response) => {
 			where.name = { [Op.iLike]: `%${search}%` };
 		}
 
-		const pets = await Pet.findAll({ where });
+		const pets = await Pet.findAll({
+			where,
+			limit: limit ? parseInt(limit as string) : 10,
+			offset: offset ? parseInt(offset as string) : 0,
+			order: [['name', 'ASC']],
+		});
 
 		return res.json(pets);
 	} catch (error) {
@@ -80,7 +85,9 @@ export const getPetById = async (req: Request, res: Response) => {
 			return res.status(400).json({ message: "ID inválido" });
 		}
 
-		const pet = await Pet.findByPk(id);
+		const pet = await Pet.findByPk(id, {
+			include: [{ model: Owner, as: "owner", attributes: ["id", "name", "phone", "email"] }],
+		});
 
 		if (!pet) {
 			return res.status(404).json({ message: "Pet não encontrado" });

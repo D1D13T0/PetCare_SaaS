@@ -1,8 +1,10 @@
-import { Pencil, Plus, Trash2 } from 'lucide-react';
+import { ClipboardList, Pencil, Plus, Search, Trash2 } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import toast from 'react-hot-toast';
+import { Link } from 'react-router-dom';
 import Layout from '../components/layout/Layout';
 import Button from '../components/ui/Button';
+import ConfirmModal from '../components/ui/ConfirmModal';
 import Modal from '../components/ui/Modal';
 import { usePets } from '../context/PetContext';
 import api from '../services/api';
@@ -29,7 +31,7 @@ const inputClass =
 	'w-full border border-gray-300 rounded-lg px-3 py-2 mt-1 focus:ring-2 focus:ring-emerald-500 focus:outline-none';
 
 export default function Pets() {
-	const { pets, loading, fetchPets, createPet, updatePet, deletePet } = usePets();
+	const { pets, loading, hasMore, fetchPets, loadMore, createPet, updatePet, deletePet } = usePets();
 
 	const [isCreateOpen, setIsCreateOpen] = useState(false);
 	const [isEditOpen, setIsEditOpen] = useState(false);
@@ -37,6 +39,8 @@ export default function Pets() {
 	const [loadingCreate, setLoadingCreate] = useState(false);
 	const [loadingEdit, setLoadingEdit] = useState(false);
 	const [loadingDeleteId, setLoadingDeleteId] = useState<string | null>(null);
+	const [confirmDelete, setConfirmDelete] = useState<{ id: string; name: string } | null>(null);
+	const [search, setSearch] = useState('');
 
 	const [name, setName] = useState('');
 	const [species, setSpecies] = useState('');
@@ -52,6 +56,13 @@ export default function Pets() {
 	useEffect(() => {
 		fetchPets();
 	}, []);
+
+	useEffect(() => {
+		const delay = setTimeout(() => {
+			fetchPets(search || undefined);
+		}, 300);
+		return () => clearTimeout(delay);
+	}, [search]);
 
 	useEffect(() => {
 		const delayDebounce = setTimeout(() => {
@@ -149,8 +160,10 @@ export default function Pets() {
 		}
 	}
 
-	async function handleDelete(id: string, petName: string) {
-		if (!confirm(`Deseja excluir o pet "${petName}"?`)) return;
+	async function handleDelete() {
+		if (!confirmDelete) return;
+		const { id } = confirmDelete;
+		setConfirmDelete(null);
 		setLoadingDeleteId(id);
 		try {
 			await deletePet(id);
@@ -165,7 +178,7 @@ export default function Pets() {
 
 	return (
 		<Layout>
-			<div className="flex items-center justify-between mb-8">
+			<div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
 				<div>
 					<h1 className="text-3xl font-semibold text-gray-800">Pets</h1>
 					<p className="text-gray-500 text-sm">Gerencie os pets da sua clínica</p>
@@ -178,7 +191,18 @@ export default function Pets() {
 				</Button>
 			</div>
 
-			<div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+			<div className="relative mb-4 max-w-sm">
+				<Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" width={16} height={16} />
+				<input
+					type="text"
+					placeholder="Buscar por nome..."
+					value={search}
+					onChange={(e) => setSearch(e.target.value)}
+					className="w-full border border-gray-300 rounded-lg pl-9 pr-3 py-2 text-sm focus:ring-2 focus:ring-emerald-500 focus:outline-none"
+				/>
+			</div>
+
+			<div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-x-auto">
 				{loading ? (
 					<div className="p-8 text-center text-gray-500">Carregando pets...</div>
 				) : pets.length === 0 ? (
@@ -186,7 +210,7 @@ export default function Pets() {
 						<p className="text-gray-500">Nenhum pet cadastrado ainda.</p>
 					</div>
 				) : (
-					<table className="w-full text-sm">
+					<table className="min-w-full text-sm">
 						<thead className="bg-gray-50 text-gray-600">
 							<tr>
 								<th className="text-left px-8 py-4 font-medium">Nome</th>
@@ -209,6 +233,13 @@ export default function Pets() {
 									<td className="px-8 py-4 text-gray-600">{formatDate(pet.birth_date)}</td>
 									<td className="px-8 py-4">
 										<div className="flex items-center justify-end gap-3">
+											<Link
+												to={`/pets/${pet.id}`}
+												className="text-gray-400 hover:text-blue-500 transition cursor-pointer"
+												title="Histórico médico"
+											>
+												<ClipboardList width={16} height={16} />
+											</Link>
 											<button
 												onClick={() => openEdit(pet)}
 												className="text-gray-400 hover:text-emerald-600 transition cursor-pointer"
@@ -217,7 +248,7 @@ export default function Pets() {
 												<Pencil width={16} height={16} />
 											</button>
 											<button
-												onClick={() => handleDelete(pet.id, pet.name)}
+												onClick={() => setConfirmDelete({ id: pet.id, name: pet.name })}
 												disabled={loadingDeleteId === pet.id}
 												className="text-gray-400 hover:text-red-500 transition disabled:opacity-50 cursor-pointer"
 												title="Excluir pet"
@@ -232,6 +263,28 @@ export default function Pets() {
 					</table>
 				)}
 			</div>
+
+			{hasMore && (
+				<div className="flex justify-center mt-4">
+					<button
+						onClick={loadMore}
+						disabled={loading}
+						className="px-6 py-2 text-sm font-medium text-emerald-600 border border-emerald-300 rounded-lg hover:bg-emerald-50 transition cursor-pointer disabled:opacity-50"
+					>
+						{loading ? 'Carregando...' : 'Carregar mais'}
+					</button>
+				</div>
+			)}
+
+			<ConfirmModal
+				isOpen={!!confirmDelete}
+				title="Excluir pet"
+				message={`Deseja excluir o pet "${confirmDelete?.name}"?`}
+				confirmLabel="Excluir"
+				onConfirm={handleDelete}
+				onClose={() => setConfirmDelete(null)}
+				loading={!!loadingDeleteId}
+			/>
 
 			{/* Modal: Novo Pet */}
 			<Modal isOpen={isCreateOpen} onClose={() => { setIsCreateOpen(false); resetForm(); }}>

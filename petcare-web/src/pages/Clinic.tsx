@@ -3,6 +3,7 @@ import { useEffect, useState } from 'react';
 import toast from 'react-hot-toast';
 import Layout from '../components/layout/Layout';
 import Button from '../components/ui/Button';
+import ConfirmModal from '../components/ui/ConfirmModal';
 import { useAuth } from '../context/AuthContext';
 import api from '../services/api';
 import type { Clinic, ClinicUser } from '../types/clinic';
@@ -36,6 +37,7 @@ export function ClinicPage() {
 	const [inviteEmail, setInviteEmail] = useState('');
 	const [loadingInvite, setLoadingInvite] = useState(false);
 	const [loadingRemoveId, setLoadingRemoveId] = useState<string | null>(null);
+	const [confirm, setConfirm] = useState<{ memberId: string; email: string } | null>(null);
 
 	useEffect(() => {
 		fetchClinic();
@@ -99,8 +101,10 @@ export function ClinicPage() {
 		}
 	}
 
-	async function handleRemove(memberId: string, email: string) {
-		if (!confirm(`Remover "${email}" da clínica?`)) return;
+	async function handleRemove() {
+		if (!confirm) return;
+		const { memberId } = confirm;
+		setConfirm(null);
 		setLoadingRemoveId(memberId);
 		try {
 			await api.delete(`/clinic/users/${memberId}`);
@@ -167,7 +171,7 @@ export function ClinicPage() {
 				</div>
 
 				{/* Card: Membros */}
-				<div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
+				<div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 overflow-x-auto">
 					<div className="flex items-center gap-2 mb-5">
 						<Users className="text-emerald-600" width={20} height={20} />
 						<h2 className="text-lg font-semibold text-gray-800">Membros</h2>
@@ -178,7 +182,7 @@ export function ClinicPage() {
 					) : members.length === 0 ? (
 						<p className="text-gray-500 text-sm">Nenhum membro cadastrado.</p>
 					) : (
-						<table className="w-full text-sm mb-6">
+						<table className="min-w-full text-sm mb-6">
 							<thead className="bg-gray-50 text-gray-600">
 								<tr>
 									<th className="text-left px-4 py-3 font-medium rounded-tl-lg">Email</th>
@@ -199,7 +203,7 @@ export function ClinicPage() {
 											<td className="px-4 py-3 text-right">
 												{member.id !== user?.id && (
 													<button
-														onClick={() => handleRemove(member.id, member.email)}
+														onClick={() => setConfirm({ memberId: member.id, email: member.email })}
 														disabled={loadingRemoveId === member.id}
 														className="text-gray-400 hover:text-red-500 transition disabled:opacity-50 cursor-pointer"
 														title="Remover membro"
@@ -238,6 +242,16 @@ export function ClinicPage() {
 					)}
 				</div>
 			</div>
+
+			<ConfirmModal
+				isOpen={!!confirm}
+				title="Remover membro"
+				message={`Deseja remover "${confirm?.email}" da clínica?`}
+				confirmLabel="Remover"
+				onConfirm={handleRemove}
+				onClose={() => setConfirm(null)}
+				loading={!!loadingRemoveId}
+			/>
 		</Layout>
 	);
 }
