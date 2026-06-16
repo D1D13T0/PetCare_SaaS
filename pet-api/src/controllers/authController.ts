@@ -92,7 +92,7 @@ export const googleLogin = async (req: Request, res: Response) => {
 			user = await User.create({
 				email,
 				password: hashedPassword,
-				role: "ADMIN",
+				role: "OWNER",
 			});
 		}
 
