@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import toast from 'react-hot-toast';
 import { Link, useNavigate } from 'react-router-dom';
 import Logo from '../components/layout/Logo';
@@ -16,7 +16,7 @@ function GoogleIcon() {
 }
 
 export default function Login() {
-	const { login, loginWithGoogle } = useAuth();
+	const { login, loginWithGoogle, handleGoogleRedirect, logout } = useAuth();
 	const navigate = useNavigate();
 
 	const [loading, setLoading] = useState(false);
@@ -24,11 +24,35 @@ export default function Login() {
 	const [email, setEmail] = useState('');
 	const [password, setPassword] = useState('');
 
+	useEffect(() => {
+		setLoadingGoogle(true);
+		handleGoogleRedirect()
+			.then((loggedIn) => {
+				if (!loggedIn) return;
+				const user = JSON.parse(localStorage.getItem('user') ?? 'null');
+				if (user?.role === 'ADMIN') {
+					logout();
+					toast.error('Email ou senha inválidos');
+					return;
+				}
+				toast.success('Login realizado com sucesso!');
+				navigate('/home');
+			})
+			.catch(() => toast.error('Erro ao fazer login com Google'))
+			.finally(() => setLoadingGoogle(false));
+	}, []);
+
 	async function handleLogin(e: { preventDefault(): void }) {
 		e.preventDefault();
 		setLoading(true);
 		try {
 			await login(email, password);
+			const user = JSON.parse(localStorage.getItem('user') ?? 'null');
+			if (user?.role === 'ADMIN') {
+				logout();
+				toast.error('Email ou senha inválidos');
+				return;
+			}
 			toast.success('Login realizado com sucesso!');
 			navigate('/home');
 		} catch {
@@ -39,17 +63,10 @@ export default function Login() {
 	}
 
 	async function handleGoogleLogin() {
-		setLoadingGoogle(true);
 		try {
 			await loginWithGoogle();
-			toast.success('Login realizado com sucesso!');
-			navigate('/home');
-		} catch (error: any) {
-			if (error?.code !== 'auth/popup-closed-by-user') {
-				toast.error('Erro ao fazer login com Google');
-			}
-		} finally {
-			setLoadingGoogle(false);
+		} catch {
+			toast.error('Erro ao iniciar login com Google');
 		}
 	}
 

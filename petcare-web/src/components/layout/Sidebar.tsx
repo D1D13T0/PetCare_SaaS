@@ -36,7 +36,9 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
 				<NavLink to="/owners" className={navClass} onClick={onClose}>Donos</NavLink>
 				<NavLink to="/appointments" className={navClass} onClick={onClose}>Agendamentos</NavLink>
 				<NavLink to="/vaccines" className={navClass} onClick={onClose}>Vacinas</NavLink>
-				<NavLink to="/financeiro" className={navClass} onClick={onClose}>Financeiro</NavLink>
+				{isAdmin && (
+					<NavLink to="/financeiro" className={navClass} onClick={onClose}>Financeiro</NavLink>
+				)}
 				{isAdmin && (
 					<NavLink to="/clinic" className={navClass} onClick={onClose}>Clínica</NavLink>
 				)}

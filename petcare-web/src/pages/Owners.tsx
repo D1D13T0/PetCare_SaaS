@@ -161,22 +161,22 @@ export function Owners() {
 									<td className="px-8 py-4 text-gray-600">{owner.document}</td>
 									<td className="px-8 py-4">
 										<div className="flex items-center justify-end gap-3">
-											<button
-												onClick={() => openEdit(owner)}
-												className="text-gray-400 hover:text-emerald-600 transition cursor-pointer"
-												title="Editar dono"
-											>
-												<Pencil width={16} height={16} />
-											</button>
-											<button
-												onClick={() => setConfirmDelete({ id: owner.id, name: owner.name })}
-												disabled={loadingDeleteId === owner.id}
-												className="text-gray-400 hover:text-red-500 transition disabled:opacity-50 cursor-pointer"
-												title="Excluir dono"
-											>
-												<Trash2 width={16} height={16} />
-											</button>
-										</div>
+										<button
+											onClick={() => openEdit(owner)}
+											className="text-gray-400 hover:text-emerald-600 transition cursor-pointer"
+											title="Editar dono"
+										>
+											<Pencil width={16} height={16} />
+										</button>
+										<button
+											onClick={() => setConfirmDelete({ id: owner.id, name: owner.name })}
+											disabled={loadingDeleteId === owner.id}
+											className="text-gray-400 hover:text-red-500 transition disabled:opacity-50 cursor-pointer"
+											title="Excluir dono"
+										>
+											<Trash2 width={16} height={16} />
+										</button>
+									</div>
 									</td>
 								</tr>
 							))}
