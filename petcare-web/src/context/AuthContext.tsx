@@ -1,4 +1,4 @@
-import { getRedirectResult, signInWithRedirect } from 'firebase/auth';
+import { signInWithPopup } from 'firebase/auth';
 import { createContext, useContext, useState } from 'react';
 import type { ReactNode } from 'react';
 import { useNavigate } from 'react-router-dom';
@@ -9,7 +9,6 @@ interface AuthContextType {
 	user: any;
 	login: (email: string, password: string) => Promise<void>;
 	loginWithGoogle: () => Promise<void>;
-	handleGoogleRedirect: () => Promise<boolean>;
 	updateUser: (updated: any) => void;
 	logout: () => void;
 }
@@ -37,19 +36,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 	}
 
 	async function loginWithGoogle() {
-		await signInWithRedirect(auth, googleProvider);
-	}
-
-	async function handleGoogleRedirect(): Promise<boolean> {
-		const result = await getRedirectResult(auth);
-		if (!result) return false;
-		const idToken = await result.user.getIdToken(true);
+		const result = await signInWithPopup(auth, googleProvider);
+		const idToken = await result.user.getIdToken();
 		const response = await api.post('/auth/google', { idToken });
 		const { token, user } = response.data;
 		localStorage.setItem('token', token);
 		localStorage.setItem('user', JSON.stringify(user));
 		setUser(user);
-		return true;
 	}
 
 	function updateUser(updated: any) {
@@ -65,7 +58,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 	}
 
 	return (
-		<AuthContext.Provider value={{ user, login, loginWithGoogle, handleGoogleRedirect, updateUser, logout }}>
+		<AuthContext.Provider value={{ user, login, loginWithGoogle, updateUser, logout }}>
 			{children}
 		</AuthContext.Provider>
 	);
