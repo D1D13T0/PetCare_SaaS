@@ -1,6 +1,7 @@
 import { signInWithPopup } from 'firebase/auth';
 import { createContext, useContext, useState } from 'react';
 import type { ReactNode } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { auth, googleProvider } from '../lib/firebase';
 import api from '../services/api';
 
@@ -15,6 +16,7 @@ interface AuthContextType {
 const AuthContext = createContext<AuthContextType | null>(null);
 
 export function AuthProvider({ children }: { children: ReactNode }) {
+	const navigate = useNavigate();
 	const [user, setUser] = useState<any>(() => {
 		const storedUser = localStorage.getItem('user');
 		if (!storedUser || storedUser === 'undefined') return null;
@@ -52,6 +54,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 		localStorage.removeItem('token');
 		localStorage.removeItem('user');
 		setUser(null);
+		navigate('/login');
 	}
 
 	return (
