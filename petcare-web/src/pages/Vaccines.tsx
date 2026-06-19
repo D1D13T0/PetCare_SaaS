@@ -10,16 +10,16 @@ import type { Vaccine } from '../types/vaccine';
 
 const inputClass =
 	'w-full border border-gray-300 rounded-lg px-3 py-2 mt-1 focus:ring-2 focus:ring-emerald-500 focus:outline-none';
+function isOverdue(date?: string) {
+	if (!date) return false;
+	return new Date(date) < new Date();
+}
 
 function formatDate(date?: string) {
 	if (!date) return '-';
 	return new Date(date).toLocaleDateString('pt-BR');
 }
 
-function isOverdue(date?: string) {
-	if (!date) return false;
-	return new Date(date) < new Date();
-}
 
 export function Vaccines() {
 	const [petSearch, setPetSearch] = useState('');
@@ -276,9 +276,11 @@ export function Vaccines() {
 									<td className="px-8 py-4 text-gray-600">{formatDate(vaccine.application_date)}</td>
 									<td className="px-8 py-4">
 										{vaccine.next_dose_date ? (
-											<span className={isOverdue(vaccine.next_dose_date) ? 'text-red-600 font-medium' : 'text-gray-600'}>
+											<span className="text-gray-600">
 												{formatDate(vaccine.next_dose_date)}
-												{isOverdue(vaccine.next_dose_date) && ' · vencida'}
+												{isOverdue(vaccine.next_dose_date) && (
+													<span className="ml-2 text-xs font-medium px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-700">concluída</span>
+												)}
 											</span>
 										) : (
 											<span className="text-gray-400">-</span>
